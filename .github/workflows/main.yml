@@ -1,4 +1,4 @@
-name: XAUUSD Signal Bot
+name: RSI MACD Signal Bot
 
 on:
   workflow_dispatch:
@@ -26,14 +26,40 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          pip install requests pandas
+
+      - name: Test Telegram
+        run: |
+          python - <<'PY'
+          import os
+          import requests
+
+          token = os.environ["TELEGRAM_BOT_TOKEN"]
+          chat_id = os.environ["TELEGRAM_CHAT_ID"]
+
+          response = requests.post(
+              f"https://api.telegram.org/bot{token}/sendMessage",
+              data={
+                  "chat_id": chat_id,
+                  "text": "✅ Telegram test: RSI MACD bot connected."
+              },
+              timeout=20
+          )
+
+          print("Telegram HTTP:", response.status_code)
+          print("Telegram response:", response.text)
+
+          response.raise_for_status()
+          PY
 
       - name: Run signal bot
         run: |
           set +e
-          timeout 240 python bot.py
+          timeout 250 python bot.py
           code=$?
 
           if [ "$code" -ne 124 ]; then
             exit "$code"
           fi
+
+          echo "Bot 250 seconds işledi, timeout normal."
